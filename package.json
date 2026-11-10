@@ -1,0 +1,29 @@
+{
+  "name": "agriconnect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AgriConnect – Farm to Consumer. A direct digital marketplace connecting farmers with consumers.",
+  "scripts": {
+    "dev": "next dev -p 3210",
+    "build": "next build",
+    "start": "next start -p 3210",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sql.js": "^1.13.0"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.12",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/sql.js": "^1.4.9",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.8.0",
+    "wrangler": "4.148.0"
+  }
+}

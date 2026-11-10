@@ -1,0 +1,229 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* Deep agricultural green */
+  --color-forest-50: #f0f7f2;
+  --color-forest-100: #dceede;
+  --color-forest-200: #b9dccb;
+  --color-forest-300: #8cc4a9;
+  --color-forest-400: #5aa682;
+  --color-forest-500: #3a8a64;
+  --color-forest-600: #2d6f50;
+  --color-forest-700: #24593f;
+  --color-forest-800: #1d4532;
+  --color-forest-900: #143125;
+
+  /* Fresh leaf green */
+  --color-leaf-50: #f4fbf1;
+  --color-leaf-100: #e4f6da;
+  --color-leaf-200: #c9ecb6;
+  --color-leaf-300: #a5dd86;
+  --color-leaf-400: #7fc754;
+  --color-leaf-500: #5fae33;
+  --color-leaf-600: #478b26;
+  --color-leaf-700: #386b1f;
+  --color-leaf-800: #2d541c;
+  --color-leaf-900: #254418;
+
+  /* Earthy brown */
+  --color-soil-50: #faf6f1;
+  --color-soil-100: #f2e9dc;
+  --color-soil-200: #e4d2b8;
+  --color-soil-300: #d1b48c;
+  --color-soil-400: #bd9465;
+  --color-soil-500: #a97c4c;
+  --color-soil-600: #8a613c;
+  --color-soil-700: #6c4a30;
+  --color-soil-800: #4d3524;
+  --color-soil-900: #332317;
+
+  /* Golden harvest accents */
+  --color-gold-50: #fffaeb;
+  --color-gold-100: #fdf0c8;
+  --color-gold-200: #fbe08d;
+  --color-gold-300: #f8ca52;
+  --color-gold-400: #f5b32a;
+  --color-gold-500: #e5980f;
+  --color-gold-600: #c27409;
+  --color-gold-700: #9a530b;
+  --color-gold-800: #7e4110;
+  --color-gold-900: #6a3611;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #faf7ef;
+  color: #2c3a2e;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #f8ca52;
+  color: #24593f;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f2ead9;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#5aa682, #2d6f50);
+  border-radius: 8px;
+}
+
+/* ---------- Floating leaves ---------- */
+@keyframes floatLeaf {
+  0% { transform: translate3d(0, -8vh, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.75; }
+  50% { transform: translate3d(3.5vw, 45vh, 0) rotate(160deg); }
+  90% { opacity: 0.5; }
+  100% { transform: translate3d(-2vw, 105vh, 0) rotate(340deg); opacity: 0; }
+}
+.floating-leaf {
+  position: absolute;
+  top: -6vh;
+  animation-name: floatLeaf;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- Drifting clouds ---------- */
+@keyframes driftCloud {
+  from { transform: translateX(-30vw); }
+  to { transform: translateX(130vw); }
+}
+.cloud {
+  position: absolute;
+  animation-name: driftCloud;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- Swaying crops ---------- */
+@keyframes swayField {
+  0%, 100% { transform: rotate(-1.4deg); }
+  50% { transform: rotate(1.4deg); }
+}
+.sway {
+  animation: swayField 6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* ---------- Rise-in on load ---------- */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise {
+  animation: riseIn 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* ---------- Soft pulse for badges ---------- */
+@keyframes softPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+}
+.pulse-soft {
+  animation: softPulse 2.4s ease-in-out infinite;
+}
+
+/* ---------- Water drop trickle ---------- */
+@keyframes dropFall {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  25% { opacity: 0.9; }
+  100% { transform: translateY(26px) scale(1); opacity: 0; }
+}
+.drop {
+  animation: dropFall 2.6s ease-in infinite;
+}
+
+/* ---------- Cow / sheep graze wander ---------- */
+@keyframes grazeWander {
+  0%, 100% { transform: translateX(0); }
+  40% { transform: translateX(14px); }
+  60% { transform: translateX(18px); }
+}
+.graze {
+  animation: grazeWander 11s ease-in-out infinite;
+}
+
+/* ---------- Smoke from farmhouse ---------- */
+@keyframes smokeUp {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.55; }
+  100% { transform: translateY(-46px) translateX(8px) scale(1.7); opacity: 0; }
+}
+.smoke {
+  animation: smokeUp 4s ease-out infinite;
+}
+
+/* ---------- Carousel marquee ---------- */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 28s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ---------- Reveal on scroll ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-leaf, .cloud, .sway, .marquee-track, .graze, .smoke, .drop, .pulse-soft {
+    animation: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---------- Card elevation hover ---------- */
+.card-lift {
+  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.35s ease;
+}
+.card-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 22px 45px -18px rgba(36, 89, 63, 0.35);
+}

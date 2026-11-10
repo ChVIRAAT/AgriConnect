@@ -24,6 +24,7 @@ export function Navbar({ user }: { user: NavUser }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -35,9 +36,18 @@ export function Navbar({ user }: { user: NavUser }) {
   useEffect(() => setOpen(false), [pathname]);
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
-    router.refresh();
+    setLogoutError("");
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) {
+        setLogoutError("Could not log out. Please try again.");
+        return;
+      }
+      router.push("/");
+      router.refresh();
+    } catch {
+      setLogoutError("Could not reach AgriConnect. Check your connection and try again.");
+    }
   }
 
   return (
@@ -123,6 +133,12 @@ export function Navbar({ user }: { user: NavUser }) {
           </svg>
         </button>
       </nav>
+
+      {logoutError && (
+        <p role="alert" className="mx-auto max-w-7xl px-4 pb-2 text-right text-xs font-semibold text-red-700 sm:px-6 lg:px-8">
+          {logoutError}
+        </p>
+      )}
 
       {open && (
         <div className="border-t border-forest-100 bg-[#faf7ef]/95 px-4 pb-4 pt-2 backdrop-blur-md md:hidden">

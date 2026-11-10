@@ -173,43 +173,63 @@ export function MyListings({ crops, farmLocation }: { crops: ManagedCrop[]; farm
 
   async function sendCrop(payload: Record<string, unknown>, cropId: number | null) {
     setError("");
-    const res = await fetch(cropId ? `/api/crops/${cropId}` : "/api/crops", {
-      method: cropId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
+    try {
+      const response = await fetch(cropId ? `/api/crops/${cropId}` : "/api/crops", {
+        method: cropId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "Something went wrong.");
+      }
       setMode("idle");
       setEditingId(null);
       router.refresh();
       return true;
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not save the listing.");
+      return false;
     }
-    try {
-      const data = await res.json();
-      setError(data?.error ?? "Something went wrong.");
-    } catch {
-      setError("Something went wrong.");
-    }
-    return false;
   }
 
   async function toggleActive(crop: ManagedCrop) {
     setBusyId(crop.id);
-    await fetch(`/api/crops/${crop.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: !(crop.is_active === 1) }),
-    });
-    setBusyId(0);
-    router.refresh();
+    setError("");
+    try {
+      const response = await fetch(`/api/crops/${crop.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !(crop.is_active === 1) }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "Could not update the listing.");
+      }
+      router.refresh();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not update the listing.");
+    } finally {
+      setBusyId(0);
+    }
   }
 
   async function removeCrop(crop: ManagedCrop) {
-    if (!window.confirm(`Mark "${crop.title}" as sold & remove it from the marketplace?`)) return;
+    if (!window.confirm(`Hide "${crop.title}" from the marketplace? The listing and inquiry history will be preserved.`)) return;
     setBusyId(crop.id);
-    await fetch(`/api/crops/${crop.id}`, { method: "DELETE" });
-    setBusyId(0);
-    router.refresh();
+    setError("");
+    try {
+      const response = await fetch(`/api/crops/${crop.id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "Could not hide the listing.");
+      }
+      router.refresh();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not hide the listing.");
+    } finally {
+      setBusyId(0);
+    }
   }
 
   const active = crops.filter((c) => c.is_active === 1);

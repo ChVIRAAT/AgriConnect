@@ -5,29 +5,48 @@ import { listCrops } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
+function isValidDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const farmerIdParam = url.searchParams.get("farmerId");
+  const farmerId = farmerIdParam === null ? undefined : Number(farmerIdParam);
+  if (farmerId !== undefined && (!Number.isSafeInteger(farmerId) || farmerId <= 0)) {
+    return NextResponse.json({ error: "Invalid farmer ID." }, { status: 400 });
+  }
+
   const crops = await listCrops({
     q: url.searchParams.get("q") ?? undefined,
     category: url.searchParams.get("category") ?? undefined,
     organic: url.searchParams.get("organic") === "1",
     location: url.searchParams.get("location") ?? undefined,
     sort: url.searchParams.get("sort") ?? undefined,
-    farmerId: url.searchParams.get("farmerId")
-      ? Number(url.searchParams.get("farmerId"))
-      : undefined,
+    farmerId,
   });
   return NextResponse.json({ crops });
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "farmer") {
-    return NextResponse.json({ error: "Only farmer accounts can list crops." }, { status: 403 });
-  }
-
   try {
-    const body = await request.json();
+    const user = await getCurrentUser();
+    if (!user || user.role !== "farmer") {
+      return NextResponse.json({ error: "Only farmer accounts can list crops." }, { status: 403 });
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      const parsed: unknown = await request.json();
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json({ error: "Invalid crop details." }, { status: 400 });
+      }
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Invalid crop details." }, { status: 400 });
+    }
     const title = String(body.title ?? "").trim();
     const category = String(body.category ?? "").trim();
     const description = String(body.description ?? "").trim();
@@ -43,10 +62,10 @@ export async function POST(request: Request) {
     if (!Number.isFinite(price) || price <= 0) {
       return NextResponse.json({ error: "Price must be a positive number." }, { status: 400 });
     }
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      return NextResponse.json({ error: "Quantity must be a positive number." }, { status: 400 });
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+      return NextResponse.json({ error: "Quantity must be a positive whole number." }, { status: 400 });
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(harvestDate)) {
+    if (!isValidDate(harvestDate)) {
       return NextResponse.json({ error: "Harvest date must be a valid date." }, { status: 400 });
     }
 

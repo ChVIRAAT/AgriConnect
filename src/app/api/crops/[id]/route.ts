@@ -20,11 +20,23 @@ export async function PATCH(request: Request, { params }: Params) {
   }
   const { id } = await params;
   const cropId = Number(id);
+  if (!Number.isSafeInteger(cropId) || cropId <= 0) {
+    return NextResponse.json({ error: "Invalid listing ID." }, { status: 400 });
+  }
   const owned = await requireOwnedCrop(cropId, user.id);
   if ("error" in owned) return NextResponse.json({ error: owned.error }, { status: owned.status });
 
   try {
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      const parsed: unknown = await request.json();
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json({ error: "Invalid listing details." }, { status: 400 });
+      }
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Invalid listing details." }, { status: 400 });
+    }
 
     if (typeof body.is_active === "boolean") {
       await run("UPDATE crops SET is_active = ? WHERE id = ?", [body.is_active ? 1 : 0, cropId]);
@@ -43,10 +55,15 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!title || !category || !description) {
       return NextResponse.json({ error: "Title, category and description are required." }, { status: 400 });
     }
-    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(quantity) || quantity <= 0) {
-      return NextResponse.json({ error: "Price and quantity must be positive numbers." }, { status: 400 });
+    if (!Number.isFinite(price) || price <= 0 || !Number.isSafeInteger(quantity) || quantity <= 0) {
+      return NextResponse.json({ error: "Price and quantity must be positive; quantity must be a whole number." }, { status: 400 });
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(harvestDate)) {
+    const harvest = new Date(`${harvestDate}T00:00:00.000Z`);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(harvestDate) ||
+      Number.isNaN(harvest.getTime()) ||
+      harvest.toISOString().slice(0, 10) !== harvestDate
+    ) {
       return NextResponse.json({ error: "Harvest date must be a valid date." }, { status: 400 });
     }
 
@@ -70,6 +87,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
   const { id } = await params;
   const cropId = Number(id);
+  if (!Number.isSafeInteger(cropId) || cropId <= 0) {
+    return NextResponse.json({ error: "Invalid listing ID." }, { status: 400 });
+  }
   const owned = await requireOwnedCrop(cropId, user.id);
   if ("error" in owned) return NextResponse.json({ error: owned.error }, { status: owned.status });
 

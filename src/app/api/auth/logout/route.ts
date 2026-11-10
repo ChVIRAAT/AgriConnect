@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { destroySession, getCurrentUser } from "@/lib/session";
-import { persistDatabase } from "@/lib/db";
+import { destroySession } from "@/lib/session";
 
 export async function POST() {
-  const user = await getCurrentUser();
-  await destroySession();
-  if (user) await persistDatabase();
-  return NextResponse.json({ ok: true });
+  try {
+    await destroySession();
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("logout error", err);
+    return NextResponse.json({ error: "Logout failed. Please try again." }, { status: 500 });
+  }
 }

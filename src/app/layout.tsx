@@ -14,12 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let user = null;
-  try {
-    user = await getCurrentUser();
-  } catch {
-    // database not ready yet — render without user
-  }
+  const user = await getCurrentUser();
 
   return (
     <html lang="en">

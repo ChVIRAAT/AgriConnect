@@ -1,9 +1,7 @@
-import numpy as np
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.models import load_model
+from pathlib import Path
+from threading import Lock
 
-# Blood group classes
-class_names = [
+CLASS_NAMES = (
     "A+",
     "A-",
     "AB+",
@@ -12,40 +10,33 @@ class_names = [
     "B-",
     "O+",
     "O-"
-]
+)
 
-# Load trained model
-model = load_model("blood_group_model.keras")
+MODEL_PATH = Path(__file__).resolve().with_name("blood_group_model.keras")
+_model = None
+_model_lock = Lock()
 
 
 def predict_blood_group(image_path):
+    import numpy as np
+    from tensorflow.keras.models import load_model
+    from tensorflow.keras.utils import img_to_array, load_img
 
-    # Load fingerprint image
-    img = image.load_img(
-        image_path,
-        target_size=(128, 128)
-    )
+    global _model
+    if _model is None:
+        with _model_lock:
+            if _model is None:
+                _model = load_model(MODEL_PATH)
 
-    # Convert image to array
-    img_array = image.img_to_array(img)
+    img = load_img(image_path, target_size=(128, 128), color_mode="rgb")
+    img_array = np.expand_dims(img_to_array(img) / 255.0, axis=0)
+    predictions = _model.predict(img_array, verbose=0)
 
-    # Normalize pixel values
-    img_array = img_array / 255.0
+    if predictions.ndim != 2 or predictions.shape[0] != 1:
+        raise ValueError("The prediction model returned an invalid result.")
+    if predictions.shape[1] != len(CLASS_NAMES):
+        raise ValueError("The prediction model has an unexpected number of classes.")
 
-    # Add batch dimension
-    img_array = np.expand_dims(img_array, axis=0)
-
-    # Make prediction
-    predictions = model.predict(img_array, verbose=0)
-
-    # Get highest probability
-    predicted_index = np.argmax(predictions[0])
-
-    confidence = float(
-        predictions[0][predicted_index] * 100
-    )
-
-    # Get blood group
-    blood_group = class_names[predicted_index]
-
-    return blood_group, confidence
+    predicted_index = int(np.argmax(predictions[0]))
+    confidence = float(predictions[0][predicted_index] * 100)
+    return CLASS_NAMES[predicted_index], confidence

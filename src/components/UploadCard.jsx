@@ -9,11 +9,20 @@ function UploadCard() {
   const [error, setError] = useState("");
 
   const selectFile = (file) => {
-    if (file) {
-      setSelectedFile(file);
+    if (!file) return;
+    const extension = file.name.toLowerCase().split(".").pop();
+    const supportedType =
+      ["image/bmp", "image/jpeg", "image/png"].includes(file.type) ||
+      ["bmp", "jpg", "jpeg", "png"].includes(extension);
+    if (!supportedType || file.size > 8 * 1024 * 1024) {
+      setSelectedFile(null);
       setResult(null);
-      setError("");
+      setError("Select a BMP, JPEG, or PNG image that is 8 MB or smaller.");
+      return;
     }
+    setSelectedFile(file);
+    setResult(null);
+    setError("");
   };
 
   const handleFileChange = (event) => {

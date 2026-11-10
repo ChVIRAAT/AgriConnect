@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CropCard } from "@/components/CropCard";
 import { FloatingLeaves, Reveal } from "@/components/Motion";
 import { InquiryForm } from "@/components/InquiryForm";
+import { OrderForm } from "@/components/OrderForm";
 import { getCrop, relatedCrops } from "@/lib/data";
 import { getCurrentUser } from "@/lib/session";
 
@@ -139,13 +140,26 @@ export default async function CropDetailPage({ params }: { params: Params }) {
               </p>
             </div>
           ) : (
-            <InquiryForm
-              cropId={crop.id}
-              isLoggedIn={user?.role === "consumer"}
-              consumerName={user?.role === "consumer" ? user.name : ""}
-              consumerPhone={user?.role === "consumer" ? user.phone ?? "" : ""}
-              consumerEmail={user?.role === "consumer" ? user.email : ""}
-            />
+            <>
+              {user?.role === "consumer" && (
+                <OrderForm
+                  cropId={crop.id}
+                  cropTitle={crop.title}
+                  price={crop.price}
+                  unit={crop.unit}
+                  available={crop.quantity}
+                  customerName={user.name}
+                  customerPhone={user.phone ?? ""}
+                />
+              )}
+              <InquiryForm
+                cropId={crop.id}
+                isLoggedIn={user?.role === "consumer"}
+                consumerName={user?.role === "consumer" ? user.name : ""}
+                consumerPhone={user?.role === "consumer" ? user.phone ?? "" : ""}
+                consumerEmail={user?.role === "consumer" ? user.email : ""}
+              />
+            </>
           )}
         </div>
       </div>

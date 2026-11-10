@@ -1,3 +1,5 @@
+import { hashPassword } from "./auth";
+
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +37,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS inquiries (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   crop_id INTEGER NOT NULL REFERENCES crops(id),
-  consumer_id INTEGER NOT NULL REFERENCES users(id),
+  consumer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   farmer_id INTEGER NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
@@ -43,8 +45,55 @@ CREATE TABLE IF NOT EXISTS inquiries (
   message TEXT NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
   status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new','contacted','closed')),
+  farmer_response TEXT,
+  responded_at TEXT,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  crop_id INTEGER NOT NULL REFERENCES crops(id),
+  consumer_id INTEGER NOT NULL REFERENCES users(id),
+  farmer_id INTEGER NOT NULL REFERENCES users(id),
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price REAL NOT NULL CHECK (unit_price > 0),
+  total_price REAL NOT NULL CHECK (total_price > 0),
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  message TEXT,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','accepted','rejected','completed','cancelled')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS order_status_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  status TEXT NOT NULL
+    CHECK (status IN ('pending','accepted','rejected','completed','cancelled')),
+  note TEXT,
+  changed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  id TEXT PRIMARY KEY,
+  applied_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS crops_farmer_active_created_idx
+  ON crops (farmer_id, is_active, created_at);
+CREATE INDEX IF NOT EXISTS sessions_user_idx
+  ON sessions (user_id);
+CREATE INDEX IF NOT EXISTS inquiries_crop_idx
+  ON inquiries (crop_id);
+CREATE INDEX IF NOT EXISTS inquiries_farmer_created_idx
+  ON inquiries (farmer_id, created_at);
+CREATE INDEX IF NOT EXISTS inquiries_consumer_created_idx
+  ON inquiries (consumer_id, created_at);
+CREATE INDEX IF NOT EXISTS orders_consumer_created_idx
+  ON orders (consumer_id, created_at);
+CREATE INDEX IF NOT EXISTS orders_farmer_created_idx
+  ON orders (farmer_id, created_at);
+CREATE INDEX IF NOT EXISTS order_status_history_order_idx
+  ON order_status_history (order_id, created_at);
 `;
 
 type SeedUser = {
@@ -95,6 +144,8 @@ const SEED_USERS: SeedUser[] = [
   },
 ];
 
+export const SEED_USER_EMAILS = SEED_USERS.map((user) => user.email);
+
 type SeedCrop = {
   farmerEmail: string; title: string; category: string; description: string;
   price: number; unit: string; quantity: number; harvestDate: string;
@@ -129,25 +180,24 @@ const SEED_CROPS: SeedCrop[] = [
 export type SeedStatement = { sql: string; params: unknown[] };
 
 /**
- * Runtime-agnostic seed statements. Applied to sql.js locally and to D1
- * (transactional batch) on Workers, so a fresh database is seeded identically
- * in both runtimes.
+ * The database initializer applies these statements transactionally and
+ * checks existing rows so partially initialized databases can be completed.
  */
 export function seedStatements(): SeedStatement[] {
   const out: SeedStatement[] = [];
   const userParams = (u: SeedUser): unknown[] => [
-    u.name, u.email, "$SEED$" + u.email, u.role, u.phone, u.avatar,
+    u.name, u.email, hashPassword("farm123"), u.role, u.phone, u.avatar,
     u.location, u.farmName ?? null, u.bio, new Date().toISOString().slice(0, 10),
   ];
   const cropParams = (c: SeedCrop): unknown[] => [
-    c.farmerEmail, c.title, c.category, c.description, c.price, c.unit,
+    c.title, c.category, c.description, c.price, c.unit,
     c.quantity, c.harvestDate, c.location, c.organic ? 1 : 0,
-    new Date().toISOString().slice(0, 10),
+    new Date().toISOString().slice(0, 10), c.farmerEmail, c.title,
   ];
 
   for (const u of SEED_USERS) {
     out.push({
-      sql: `INSERT INTO users (name, email, password_hash, role, phone, avatar, location, farm_name, bio, created_at)
+      sql: `INSERT OR IGNORE INTO users (name, email, password_hash, role, phone, avatar, location, farm_name, bio, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       params: userParams(u),
     });
@@ -155,8 +205,14 @@ export function seedStatements(): SeedStatement[] {
   for (const c of SEED_CROPS) {
     out.push({
       sql: `INSERT INTO crops (farmer_id, title, category, description, price, unit, quantity, harvest_date, location, organic, is_active, created_at)
-            SELECT u.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ? FROM users u WHERE u.email = ?`,
-      params: [...cropParams(c), c.farmerEmail],
+            SELECT u.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?
+            FROM users u
+            WHERE u.email = ?
+              AND NOT EXISTS (
+                SELECT 1 FROM crops existing
+                WHERE existing.farmer_id = u.id AND existing.title = ?
+              )`,
+      params: cropParams(c),
     });
   }
   return out;

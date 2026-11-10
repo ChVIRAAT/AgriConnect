@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiGet, apiPost } from "./api";
 import "./App.css";
 
 import Navbar from "./components/Navbar";
@@ -7,37 +8,67 @@ import UploadCard from "./components/UploadCard";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 
-const STORAGE_KEY = "authUser";
-
 function App() {
-  // Restore the session on refresh so the user isn't logged out.
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [sessionError, setSessionError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    apiGet("/session")
+      .then((data) => {
+        if (active) setUser(data.user);
+      })
+      .catch((error) => {
+        if (active && error.status !== 401) {
+          setSessionError("Could not reach the backend. Make sure Flask is running.");
+        }
+      })
+      .finally(() => {
+        if (active) setCheckingSession(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleLoginSuccess = (loggedInUser) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedInUser));
     setUser(loggedInUser);
+    setSessionError("");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      await apiPost("/logout", {});
+      setUser(null);
+      setSessionError("");
+    } catch {
+      setSessionError("Could not log out because the backend is unavailable.");
+    }
   };
+
+  if (checkingSession) {
+    return <div className="session-loading">Checking your session...</div>;
+  }
 
   // Not authenticated → show the login page only.
   if (!user) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
+    return (
+      <Login
+        onLoginSuccess={handleLoginSuccess}
+        initialMessage={sessionError}
+      />
+    );
   }
 
   // Authenticated → main application.
   return (
     <>
+      {sessionError && (
+        <div className="session-error" role="alert">
+          {sessionError}
+        </div>
+      )}
       <Navbar user={user} onLogout={handleLogout} />
       <Hero />
       <UploadCard />

@@ -15,18 +15,23 @@ export function LoginForm() {
     e.preventDefault();
     setStatus("busy");
     setError("");
-    const fd = new FormData(e.currentTarget);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: fd.get("email"), password: fd.get("password") }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      router.push(data.role === "farmer" ? "/dashboard" : "/crops");
-      router.refresh();
-    } else {
-      setError(data.error ?? "Login failed.");
+    try {
+      const fd = new FormData(e.currentTarget);
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: fd.get("email"), password: fd.get("password") }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        router.push(data.role === "farmer" ? "/dashboard" : "/crops");
+        router.refresh();
+      } else {
+        setError(data.error ?? "Login failed.");
+        setStatus("idle");
+      }
+    } catch {
+      setError("Could not reach AgriConnect. Check your connection and try again.");
       setStatus("idle");
     }
   }
@@ -120,28 +125,33 @@ export function RegisterForm() {
     e.preventDefault();
     setStatus("busy");
     setError("");
-    const fd = new FormData(e.currentTarget);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: fd.get("name"),
-        email: fd.get("email"),
-        password: fd.get("password"),
-        phone: fd.get("phone"),
-        location: fd.get("location"),
-        role,
-        avatar,
-        farm_name: fd.get("farm_name"),
-        bio: fd.get("bio"),
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      router.push(role === "farmer" ? "/dashboard" : "/crops");
-      router.refresh();
-    } else {
-      setError(data.error ?? "Registration failed.");
+    try {
+      const fd = new FormData(e.currentTarget);
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: fd.get("name"),
+          email: fd.get("email"),
+          password: fd.get("password"),
+          phone: fd.get("phone"),
+          location: fd.get("location"),
+          role,
+          avatar,
+          farm_name: fd.get("farm_name"),
+          bio: fd.get("bio"),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        router.push(role === "farmer" ? "/dashboard" : "/crops");
+        router.refresh();
+      } else {
+        setError(data.error ?? "Registration failed.");
+        setStatus("idle");
+      }
+    } catch {
+      setError("Could not reach AgriConnect. Check your connection and try again.");
       setStatus("idle");
     }
   }

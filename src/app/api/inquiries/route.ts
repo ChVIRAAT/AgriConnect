@@ -6,19 +6,36 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    let body: Record<string, unknown>;
+    try {
+      const parsed: unknown = await request.json();
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json({ error: "Invalid inquiry details." }, { status: 400 });
+      }
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Invalid inquiry details." }, { status: 400 });
+    }
     const cropId = Number(body.cropId);
     const name = String(body.name ?? "").trim();
     const phone = String(body.phone ?? "").trim();
     const email = String(body.email ?? "").trim() || null;
     const message = String(body.message ?? "").trim();
-    const quantity = Number(body.quantity) || 1;
+    const quantity = body.quantity == null || body.quantity === ""
+      ? 1
+      : Number(body.quantity);
 
-    if (!Number.isFinite(cropId)) {
+    if (!Number.isSafeInteger(cropId) || cropId <= 0) {
       return NextResponse.json({ error: "Invalid crop." }, { status: 400 });
     }
     if (!name || !phone || !message) {
       return NextResponse.json({ error: "Name, phone and message are required." }, { status: 400 });
+    }
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+      return NextResponse.json({ error: "Quantity must be a positive whole number." }, { status: 400 });
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
     }
 
     const cropRows = await all<{ farmer_id: number }>("SELECT farmer_id FROM crops WHERE id = ?", [cropId]);
@@ -31,7 +48,7 @@ export async function POST(request: Request) {
     await run(
       `INSERT INTO inquiries (crop_id, consumer_id, farmer_id, name, phone, email, message, quantity, status, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)`,
-      [cropId, user?.id ?? 0, cropRows[0].farmer_id, name, phone, email, message, quantity, now]
+      [cropId, user?.id ?? null, cropRows[0].farmer_id, name, phone, email, message, quantity, now]
     );
     await persistDatabase();
 

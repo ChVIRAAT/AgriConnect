@@ -12,6 +12,8 @@ export type ListingInquiry = {
   message: string;
   quantity: number;
   status: "new" | "contacted" | "closed";
+  farmer_response: string | null;
+  responded_at: string | null;
   created_at: string;
 };
 
@@ -38,16 +40,50 @@ function timeAgo(iso: string): string {
 export function InquiriesPanel({ inquiries }: { inquiries: ListingInquiry[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState(0);
+  const [error, setError] = useState("");
 
   async function setStatus(inq: ListingInquiry, status: ListingInquiry["status"]) {
     setBusyId(inq.id);
-    await fetch(`/api/inquiries/${inq.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    setBusyId(0);
-    router.refresh();
+    setError("");
+    try {
+      const response = await fetch(`/api/inquiries/${inq.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "Could not update the inquiry.");
+      }
+      router.refresh();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not update the inquiry.");
+    } finally {
+      setBusyId(0);
+    }
+  }
+
+  async function sendReply(inquiryId: number, reply: string): Promise<boolean> {
+    setBusyId(inquiryId);
+    setError("");
+    try {
+      const response = await fetch(`/api/inquiries/${inquiryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: reply }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "Could not save your reply.");
+      }
+      router.refresh();
+      return true;
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not save your reply.");
+      return false;
+    } finally {
+      setBusyId(0);
+    }
   }
 
   const fresh = inquiries.filter((i) => i.status === "new").length;
@@ -61,6 +97,7 @@ export function InquiriesPanel({ inquiries }: { inquiries: ListingInquiry[] }) {
             {inquiries.length} total · {fresh} waiting for your reply
           </p>
         </div>
+        {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">{error}</p>}
         {fresh > 0 && (
           <span className="pulse-soft inline-flex items-center gap-1.5 rounded-full bg-gold-200 px-3 py-1 text-xs font-bold text-gold-800">
             <span aria-hidden>🔔</span> {fresh} new
@@ -105,6 +142,42 @@ export function InquiriesPanel({ inquiries }: { inquiries: ListingInquiry[] }) {
                     </a>
                     {inq.email && <span>✉️ {inq.email}</span>}
                   </p>
+                  {inq.farmer_response && (
+                    <p className="mt-3 rounded-2xl border border-leaf-200 bg-white p-3 text-sm text-forest-800">
+                      <strong>Your reply:</strong> {inq.farmer_response}
+                    </p>
+                  )}
+                  <form
+                    className="mt-3 flex flex-col gap-2 sm:flex-row"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const form = event.currentTarget;
+                      const reply = new FormData(form).get("reply");
+                      if (typeof reply === "string" && reply.trim()) {
+                        void sendReply(inq.id, reply).then((saved) => {
+                          if (saved) form.reset();
+                        });
+                      }
+                    }}
+                  >
+                    <label className="sr-only" htmlFor={`reply-${inq.id}`}>Reply to {inq.name}</label>
+                    <textarea
+                      id={`reply-${inq.id}`}
+                      name="reply"
+                      required
+                      maxLength={2000}
+                      rows={2}
+                      placeholder="Write a reply visible in the customer's dashboard"
+                      className="min-w-0 flex-1 rounded-xl border border-forest-200 bg-white px-3 py-2 text-sm outline-none focus:border-leaf-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={busyId === inq.id}
+                      className="rounded-full bg-forest-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      {busyId === inq.id ? "Sending..." : "Send reply"}
+                    </button>
+                  </form>
                 </div>
 
                 <div className="flex shrink-0 flex-wrap gap-2">
@@ -194,6 +267,12 @@ export function MySentInquiries({ inquiries }: { inquiries: ConsumerInquiry[] })
                 {inq.farmer_avatar} {inq.farmer_name} · ₹{inq.price} / {inq.unit} · wanted {inq.quantity.toLocaleString("en-IN")}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-soil-700">“{inq.message}”</p>
+              {inq.farmer_response && (
+                <p className="mt-3 rounded-2xl border border-leaf-200 bg-white p-3 text-sm text-forest-800">
+                  <strong>Farmer reply:</strong> {inq.farmer_response}
+                  {inq.responded_at && <span className="mt-1 block text-xs text-soil-500">{timeAgo(inq.responded_at)}</span>}
+                </p>
+              )}
             </div>
           ))}
         </div>

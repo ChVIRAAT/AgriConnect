@@ -1,11 +1,17 @@
 node_modules/
 .next/
 out/
+/dist/
 data/*.db
 data/*.db-*
 *.tsbuildinfo
 next-env.d.ts
 .env*
+backend/.venv/
+backend/__pycache__/
+backend/*.py[cod]
+backend/users.db*
+backend/uploads/
 /freebuff-sites-build/
 /.open-next/
 /.wrangler/

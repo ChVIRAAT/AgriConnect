@@ -31,20 +31,27 @@ export function InquiryForm({
       message: fd.get("message"),
       quantity: fd.get("quantity"),
     };
-    const res = await fetch("/api/inquiries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      setStatus("sent");
-    } else {
-      let msg = "Could not send your inquiry. Please try again.";
-      try {
-        const data = await res.json();
-        if (data?.error) msg = data.error;
-      } catch {}
-      setError(msg);
+    try {
+      const res = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setStatus("sent");
+      } else {
+        let msg = "Could not send your inquiry. Please try again.";
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {
+          msg = "The inquiry could not be processed. Please try again.";
+        }
+        setError(msg);
+        setStatus("error");
+      }
+    } catch {
+      setError("Could not reach AgriConnect. Check your connection and try again.");
       setStatus("error");
     }
   }

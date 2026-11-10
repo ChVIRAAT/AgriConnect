@@ -1,16 +1,32 @@
 import { NextResponse } from "next/server";
 import { all, persistDatabase, run } from "@/lib/db";
-import { hashPassword, newToken, verifyPassword } from "@/lib/auth";
+import { newToken, verifyPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const email = String(body.email ?? "").trim().toLowerCase();
-    const password = String(body.password ?? "");
+    let body: Record<string, unknown>;
+    try {
+      const parsed: unknown = await request.json();
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json({ error: "Invalid login details." }, { status: 400 });
+      }
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Invalid login details." }, { status: 400 });
+    }
+
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+    }
+    if (email.length > 254 || password.length > 128) {
+      return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
     }
 
     const rows = await all<{ id: number; password_hash: string }>(
@@ -21,17 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No account found with this email." }, { status: 401 });
     }
     const user = rows[0];
-    let hash = user.password_hash;
-
-    // Demo accounts created by the seeder accept the shared demo password,
-    // then transparently upgrade to a real scrypt hash.
-    if (hash.startsWith("$SEED$")) {
-      if (password !== "farm123") {
-        return NextResponse.json({ error: "Incorrect password for the demo account (try farm123)." }, { status: 401 });
-      }
-      hash = hashPassword(password);
-      await run("UPDATE users SET password_hash = ? WHERE id = ?", [hash, user.id]);
-    } else if (!verifyPassword(password, hash)) {
+    if (!verifyPassword(password, user.password_hash)) {
       return NextResponse.json({ error: "Incorrect password. Please try again." }, { status: 401 });
     }
 

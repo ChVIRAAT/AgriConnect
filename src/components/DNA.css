@@ -1,0 +1,49 @@
+.dna{
+    position:relative;
+    width:170px;
+    height:420px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.line{
+    position:absolute;
+    left:50%;
+    width:3px;
+    height:100%;
+    background:#00d9ff;
+    opacity:.2;
+}
+
+.pair{
+    width:150px;
+    display:flex;
+    justify-content:space-between;
+    animation:rotateDNA 3s linear infinite;
+}
+
+.pair span{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:#00d9ff;
+    box-shadow:0 0 15px #00d9ff;
+}
+
+@keyframes rotateDNA{
+
+0%{
+transform:rotateY(0deg);
+}
+
+50%{
+transform:rotateY(180deg);
+}
+
+100%{
+transform:rotateY(360deg);
+}
+
+}

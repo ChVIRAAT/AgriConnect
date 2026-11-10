@@ -1,0 +1,14 @@
+/* Global base styles.
+   The app theme (fonts, colors, backgrounds) lives in App.css. */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: #07162d;
+}
+
+#root {
+  min-height: 100vh;
+}

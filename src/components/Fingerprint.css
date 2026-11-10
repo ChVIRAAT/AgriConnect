@@ -1,0 +1,28 @@
+.fingerprint{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    animation:float 4s ease-in-out infinite;
+}
+
+.fingerprint svg{
+    filter:
+        drop-shadow(0 0 15px #00d9ff)
+        drop-shadow(0 0 35px #00d9ff);
+}
+
+@keyframes float{
+
+0%{
+transform:translateY(0px);
+}
+
+50%{
+transform:translateY(-12px);
+}
+
+100%{
+transform:translateY(0px);
+}
+
+}

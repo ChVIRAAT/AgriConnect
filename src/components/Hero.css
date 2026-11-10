@@ -1,0 +1,389 @@
+/* ============================= */
+/* HERO SECTION */
+/* ============================= */
+
+.hero{
+    position:relative;
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:120px 8%;
+    overflow:hidden;
+}
+
+.hero-left{
+    width:48%;
+    z-index:5;
+}
+
+.hero-right{
+    width:52%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    position:relative;
+}
+
+/* ============================= */
+/* TEXT */
+/* ============================= */
+
+.hero-left h1{
+
+    font-size:72px;
+    line-height:1.05;
+    color:#ffffff;
+    font-weight:800;
+    margin-bottom:25px;
+
+}
+
+.hero-left h1 span{
+
+    color:#00d4ff;
+
+}
+
+.hero-left p{
+
+    color:#b7c7df;
+    font-size:20px;
+    line-height:1.8;
+    max-width:600px;
+    margin-bottom:45px;
+
+}
+
+/* ============================= */
+/* FEATURE CARDS */
+/* ============================= */
+
+.feature-boxes{
+
+    display:flex;
+    gap:25px;
+    flex-wrap:wrap;
+
+}
+
+.feature-box{
+
+    width:240px;
+
+    padding:22px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.06);
+
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    transition:.4s;
+
+}
+
+.feature-box:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:0 0 35px rgba(0,212,255,.35);
+
+}
+
+.feature-box h3{
+
+    color:white;
+
+    margin-bottom:8px;
+
+}
+
+.feature-box p{
+
+    margin:0;
+
+    font-size:15px;
+
+    color:#c3d0e6;
+
+}/* ============================= */
+/* FINGERPRINT SECTION */
+/* ============================= */
+
+.hero-right{
+    position:relative;
+}
+
+.fingerprint{
+
+    width:600px;
+    height:600px;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    position:relative;
+
+    animation:fingerprintFloat 6s ease-in-out infinite;
+
+}
+
+.fingerprint svg{
+
+    width:100%;
+    height:100%;
+
+    filter:
+        drop-shadow(0 0 20px #00d4ff)
+        drop-shadow(0 0 50px #00d4ff)
+        drop-shadow(0 0 100px rgba(0,212,255,.35));
+
+}
+
+/* ============================= */
+/* GLOWING RINGS */
+/* ============================= */
+
+.fingerprint::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:520px;
+    height:520px;
+
+    border-radius:50%;
+
+    border:2px solid rgba(0,212,255,.25);
+
+    animation:ringRotate 20s linear infinite;
+
+}
+
+.fingerprint::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:660px;
+    height:660px;
+
+    border-radius:50%;
+
+    border:2px dashed rgba(0,212,255,.18);
+
+    animation:ringRotateReverse 25s linear infinite;
+
+}
+
+/* ============================= */
+/* SCANNING LINE */
+/* ============================= */
+
+.hero-right::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:430px;
+    height:3px;
+
+    background:#00d4ff;
+
+    box-shadow:0 0 20px #00d4ff;
+
+    animation:scanner 3.5s linear infinite;
+
+}
+
+/* ============================= */
+/* ANIMATIONS */
+/* ============================= */
+
+@keyframes fingerprintFloat{
+
+0%{
+transform:translateY(0px);
+}
+
+50%{
+transform:translateY(-18px);
+}
+
+100%{
+transform:translateY(0px);
+}
+
+}
+
+@keyframes ringRotate{
+
+from{
+transform:rotate(0deg);
+}
+
+to{
+transform:rotate(360deg);
+}
+
+}
+
+@keyframes ringRotateReverse{
+
+from{
+transform:rotate(360deg);
+}
+
+to{
+transform:rotate(0deg);
+}
+
+}
+
+@keyframes scanner{
+
+0%{
+top:120px;
+opacity:0;
+}
+
+10%{
+opacity:1;
+}
+
+50%{
+top:320px;
+}
+
+90%{
+opacity:1;
+}
+
+100%{
+top:520px;
+opacity:0;
+}
+
+}/* ==========================================
+   DNA POSITIONING
+========================================== */
+
+.dna{
+    position:absolute;
+    z-index:2;
+    opacity:.75;
+}
+
+.hero > .dna:first-child{
+    right:5%;
+    top:50%;
+    transform:translateY(-50%);
+}
+
+/* ==========================================
+   BLOOD CELLS
+========================================== */
+
+.blood-cell{
+    z-index:4;
+}
+
+.cell1{
+    top:8%;
+    right:18%;
+}
+
+.cell2{
+    bottom:12%;
+    right:35%;
+}
+
+/* ==========================================
+   HERO GLOW
+========================================== */
+
+.hero-right::before{
+    content:"";
+    position:absolute;
+    width:700px;
+    height:700px;
+    border-radius:50%;
+    background:radial-gradient(
+        circle,
+        rgba(0,212,255,.18),
+        rgba(0,212,255,.08),
+        transparent 70%
+    );
+    filter:blur(35px);
+    z-index:0;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width:1100px){
+
+.hero{
+    flex-direction:column;
+    text-align:center;
+    padding-top:120px;
+}
+
+.hero-left,
+.hero-right{
+    width:100%;
+}
+
+.hero-right{
+    margin-top:60px;
+}
+
+.hero-left h1{
+    font-size:56px;
+}
+
+.fingerprint{
+    width:450px;
+    height:450px;
+}
+
+.hero > .dna:first-child{
+    display:none;
+}
+
+}
+
+@media (max-width:768px){
+
+.hero-left h1{
+    font-size:42px;
+}
+
+.hero-left p{
+    font-size:18px;
+}
+
+.fingerprint{
+    width:320px;
+    height:320px;
+}
+
+.feature-boxes{
+    justify-content:center;
+}
+
+.feature-box{
+    width:100%;
+    max-width:320px;
+}
+
+}
